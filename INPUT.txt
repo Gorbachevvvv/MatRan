@@ -1,0 +1,40 @@
+﻿# Основные типы данных
+int_var = 10
+real_var = 3.14
+complex_var = complex(1.0, 2.0)
+char_var = "Hello, Python!"
+bool_var = True
+# Вызов функции и процедуры
+def factorial(n):
+    if n == 0:
+        return 1
+    else:
+        return n * factorial(n - 1)
+def power(base, exponent):
+    result = 1
+    for _ in range(exponent):
+        result *= base
+    return result
+# Вывод начальных значений
+print('Initial values:')
+print(f'Integer variable: {int_var}')
+print(f'Real variable: {real_var}')
+print(f'Complex variable: {complex_var}')
+print(f'Character variable: {char_var}')
+print(f'Boolean variable: {bool_var}')
+# Вызов функции для вычисления факториала
+factorial_result = factorial(int_var)
+print(f'Factorial of integer variable: {factorial_result}')
+# Вызов процедуры для возведения в степень
+power_result = power(real_var, 2)
+print(f'Square of real variable: {power_result}')
+# Использование цикла for (аналог индексированного цикла DO)
+print('Using for loop to demonstrate counting:')
+for i in range(1, 6):
+    print(f'Counting: {i}')
+# Использование цикла while (аналог DO WHILE)
+print('Using while loop to demonstrate countdown:')
+i = 5
+while i >= 1:
+    print(f'Countdown: {i}')
+    i -= 1
