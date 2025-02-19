@@ -7,7 +7,7 @@ class LexicalAnalyzer
 {
     static void Main(string[] args)
     {
-        string inputFilePath = @"C:\Users\sasha\RiderProjects\MatRan\INPUT.TXT";
+        string inputFilePath = @"C:\Users\sasha\matran\lab2\INPUT.TXT";
         if (!File.Exists(inputFilePath))
         {
             Console.WriteLine("Файл не найден!");
@@ -16,7 +16,7 @@ class LexicalAnalyzer
 
         string sourceCode = File.ReadAllText(inputFilePath);
 
-        // Список зарезервированных слов Python + дополнительные токены
+        // Список зарезервированных слов 
         string[] reservedWords = {
             "False", "class", "finally", "is", "return",
             "None", "continue", "for", "lambda", "try",
@@ -36,25 +36,6 @@ class LexicalAnalyzer
             "str", "sum", "super", "tuple", "type", "vars", "zip", "join", "__init__", "power"
         };
 
-        // Специальные токены
-        Dictionary<string, string> specialTokens = new Dictionary<string, string>
-        {
-            { "print", "<ФУНКЦИЯ>" },
-            { "f", "<ФОРМАТ>" }
-        };
-
-        // Регулярные выражения для токенов
-        List<Regex> tokenPatterns = new List<Regex>
-        {
-            new Regex(@"#.*$|//.*$|/\*[\s\S]*?\*/", RegexOptions.Multiline), // Комментарии
-            new Regex(@"""([^""\\]|\\.)*""|'([^'\\]|\\.)*'"), // Строковые литералы
-            new Regex(@"[a-zA-Z_]\w*"), // Идентификаторы (только латинские буквы)
-            new Regex(@"\d+(\.\d*)?([eE][+-]?\d+)?|\."), // Числовые константы + точка
-            new Regex(@"[+*/=<>!&|%^-]+"), // Операторы
-            new Regex(@"[(){}\[\];:,.]"), // Разделители (включая точку)
-            new Regex(@"\s+") // Пробелы
-        };
-
         // Таблицы для хранения данных
         Dictionary<string, int> identifiers = new Dictionary<string, int>();
         Dictionary<string, int> constants = new Dictionary<string, int>();
@@ -62,26 +43,38 @@ class LexicalAnalyzer
         Dictionary<string, int> delimiters = new Dictionary<string, int>();
         Dictionary<string, int> keywords = new Dictionary<string, int>();
 
+        List<Regex> tokenPatterns = new List<Regex>
+        {
+            new Regex(@"#.*$|//.*$|/\*[\s\S]*?\*/", RegexOptions.Multiline), // Комментарии
+            new Regex(@"""([^""\\]|\\.)*""|'([^'\\]|\\.)*'"), // Строковые литералы
+            new Regex(@"[a-zA-Z_]\w*"), // Идентификаторы (только латинские буквы)
+            new Regex(@"\d+(\.\d*)?([eE][+-]?\d+)?"), // Числовые константы
+            new Regex(@"[+\-*/=<>!&|%^]+"), // Операторы
+            new Regex(@"[(){}\[\];:,]"), // Разделители
+            new Regex(@"\s+"), // Пробелы и табуляция
+            new Regex(@"\n") // Новая строка
+        };
+
+        // Выходной поток лексем
         List<string> tokensOutput = new List<string>();
+
         int position = 0;
         int idCounter = 1;
         int constCounter = 1;
         int opCounter = 1;
         int delimCounter = 1;
         int kwCounter = 1;
-
         bool hasErrors = false;
 
         while (position < sourceCode.Length)
         {
             bool matchFound = false;
-
             foreach (var pattern in tokenPatterns)
             {
                 Match match = pattern.Match(sourceCode, position);
                 if (match.Success && match.Index == position)
                 {
-                    string token = match.Value.Trim();
+                    string token = match.Value;
 
                     if (string.IsNullOrEmpty(token) || token.StartsWith("#") || token.StartsWith("//") || token.StartsWith("/*"))
                     {
@@ -91,17 +84,13 @@ class LexicalAnalyzer
                         break;
                     }
 
-                    if (specialTokens.ContainsKey(token))
-                    {
-                        tokensOutput.Add(specialTokens[token]);
-                    }
-                    else if (Array.Exists(reservedWords, word => word.Equals(token, StringComparison.OrdinalIgnoreCase)))
+                    if (Array.Exists(reservedWords, word => word.Equals(token, StringComparison.OrdinalIgnoreCase)))
                     {
                         if (!keywords.ContainsKey(token))
                         {
                             keywords.Add(token, kwCounter++);
                         }
-                        tokensOutput.Add($"<КЛЮЧ{keywords[token]}>");
+                        tokensOutput.Add($"<РЕЗЕРВ{keywords[token]}>");
                     }
                     else if (Regex.IsMatch(token, @"^[a-zA-Z_]\w*$")) // Идентификаторы
                     {
@@ -121,35 +110,35 @@ class LexicalAnalyzer
                     }
                     else if (Regex.IsMatch(token, @"""([^""\\]|\\.)*""|'([^'\\]|\\.)*'")) // Строковые литералы
                     {
-                        string strippedToken = token.Substring(1, token.Length - 2);
-                        if (!string.IsNullOrEmpty(strippedToken))
+                        if (!constants.ContainsKey(token))
                         {
-                            if (!constants.ContainsKey(token))
-                            {
-                                constants.Add(token, constCounter++);
-                            }
-                            tokensOutput.Add($"<СТР{constants[token]}>");
+                            constants.Add(token, constCounter++);
                         }
-                        else
-                        {
-                            tokensOutput.Add("<ПУСТАЯ_СТРОКА>");
-                        }
+                        tokensOutput.Add($"<СТР{constants[token]}>");
                     }
-                    else if (Regex.IsMatch(token, @"[+*/=<>!&|%^-]+")) // Операторы
+                    else if (Regex.IsMatch(token, @"[+\-*/=<>!&|%^]+")) // Операторы
                     {
                         if (!operators.ContainsKey(token))
                         {
                             operators.Add(token, opCounter++);
                         }
-                        tokensOutput.Add($"<ОПЕРАТОР{operators[token]}>");
+                        tokensOutput.Add(token); 
                     }
-                    else if (Regex.IsMatch(token, @"[(){}\[\];:,]")) // Разделители
+                    else if (Regex.IsMatch(token, @"[(){}\[\];:,]")) 
                     {
                         if (!delimiters.ContainsKey(token))
                         {
                             delimiters.Add(token, delimCounter++);
                         }
-                        tokensOutput.Add($"<ДЕЛИМ{delimiters[token]}>");
+                        tokensOutput.Add(token); 
+                    }
+                    else if (Regex.IsMatch(token, @"\s+")) 
+                    {
+                        tokensOutput.Add(token); 
+                    }
+                    else if (Regex.IsMatch(token, @"\n")) 
+                    {
+                        tokensOutput.Add("\n"); 
                     }
 
                     position += match.Length;
