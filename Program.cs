@@ -116,7 +116,7 @@ class LexicalAnalyzer
                         }
                         tokensOutput.Add($"<СТР{constants[token]}>");
                     }
-                    else if (Regex.IsMatch(token, @"[+\-*/=<>!&|%^]+")) // Операторы
+                    else if (Regex.IsMatch(token, @"[+\-*/=<>!&|%^]+")) 
                     {
                         if (!operators.ContainsKey(token))
                         {
